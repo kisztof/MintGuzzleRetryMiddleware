@@ -1,5 +1,6 @@
 <?php
 
+
 namespace MintSoftware\GuzzleRetry;
 
 use GuzzleHttp\Exception\BadResponseException;
@@ -78,9 +79,8 @@ class RetryMiddleware
     public function __invoke(RequestInterface $request, array $options): PromiseInterface
     {
         $options = array_replace($this->defaultOptions, $options);
-        if (!isset($options[self::RETRY_COUNT])) {
-            $options[self::RETRY_COUNT] = 0;
-        }
+        $options[self::RETRY_COUNT] = $options[self::RETRY_COUNT] ?? 0;
+
         $next = $this->nextHandler;
 
         return $next($request, $options)
@@ -169,7 +169,7 @@ class RetryMiddleware
      */
     private function shouldRetryOnHttpResponse(ResponseInterface $response, array $options): bool
     {
-        $statuses = array_map('\intval', $options[self::OPTIONS_RETRY_ON_STATUS]);
+        $statuses = \array_map('\intval', $options[self::OPTIONS_RETRY_ON_STATUS]);
 
         if (false === $options[self::OPTIONS_RETRY_ENABLED]) {
             return false;
@@ -195,10 +195,10 @@ class RetryMiddleware
      */
     private function remainingRetires(array $options): int
     {
-        $count = isset($options[self::RETRY_COUNT]) ? (int)$options[self::RETRY_COUNT] : 0;
-        $max = isset($options[self::OPTIONS_MAX_RETRY_ATTEMPTS]) ? (int)$options[self::OPTIONS_MAX_RETRY_ATTEMPTS] : 0;
+        $count = (int)$options[self::RETRY_COUNT] ?? 0;
+        $max = (int)$options[self::OPTIONS_MAX_RETRY_ATTEMPTS] ?? 0;
 
-        return max($max - $count, 0);
+        return \max($max - $count, 0);
     }
 
     /**
@@ -212,14 +212,14 @@ class RetryMiddleware
     {
         //If Response support Retry-After header
         if ($response && $response->hasHeader(self::RETRY_AFTER)) {
-            return (int)trim(($response->getHeader(self::RETRY_AFTER)[0]));
+            return (int)\trim(($response->getHeader(self::RETRY_AFTER)[0]));
         }
 
         return (int)$options[self::OPTIONS_RETRY_AFTER_SECONDS];
     }
 
     /**
-     * Return Response or  Response with Retry Header depends on option
+     * Return Response or Response with Retry Header depends on option
      *
      * @param ResponseInterface $response
      * @param array $options
@@ -238,8 +238,10 @@ class RetryMiddleware
      * @param RequestInterface $request
      * @param array $options
      * @param ResponseInterface|null $response
+     *
+     * @return
      */
-    private function retry(RequestInterface $request, array $options, ResponseInterface $response = null)
+    private function retry(RequestInterface $request, array $options, ResponseInterface $response = null): PromiseInterface
     {
         $options[self::RETRY_COUNT] = $options[self::RETRY_COUNT] + 1;
         $delay = $this->delayAfter($options, $response);
