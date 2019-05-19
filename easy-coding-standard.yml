@@ -1,0 +1,7 @@
+imports:
+    - { resource: 'vendor/symplify/easy-coding-standard/config/symfony.yml' }
+
+parameters:
+    skip:
+        PhpCsFixer\Fixer\PhpTag\BlankLineAfterOpeningTagFixer: ~
+    line_ending: "\n"

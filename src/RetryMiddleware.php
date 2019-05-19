@@ -1,6 +1,5 @@
 <?php
 
-
 namespace MintSoftware\GuzzleRetry;
 
 use GuzzleHttp\Exception\BadResponseException;
@@ -12,25 +11,22 @@ use Symfony\Component\HttpFoundation\Response;
 use function GuzzleHttp\Promise\rejection_for;
 
 /**
- * Class RetryMiddleware
- * @package MintSoftware\GuzzleRetry
+ * Class RetryMiddleware.
  */
 class RetryMiddleware
 {
-    private const
-        RETRY_AFTER = 'Retry-After',
-        RETRY_COUNT = 'retry_count';
+    private const RETRY_AFTER = 'Retry-After';
+    private const RETRY_COUNT = 'retry_count';
 
-    public const
-        RETRY_HEADER = 'X-Retry-Counter',
-        OPTIONS_RETRY_ENABLED = 'retry_enabled',
-        OPTIONS_MAX_RETRY_ATTEMPTS = 'max_retry_attempts',
-        OPTIONS_RETRY_ONLY_IF_RETRY_AFTER_HEADER = 'retry_only_if_retry_after_header',
-        OPTIONS_RETRY_ON_STATUS = 'retry_on_statuses',
-        OPTIONS_RETRY_HEADER = 'retry_header',
-        OPTIONS_RETRY_ON_TIMEOUT = 'retry_on_timeout',
-        OPTIONS_RETRY_AFTER_SECONDS = 'retry_after_seconds',
-        OPTIONS_CALLBACK = 'callback';
+    public const RETRY_HEADER = 'X-Retry-Counter';
+    public const OPTIONS_RETRY_ENABLED = 'retry_enabled';
+    public const OPTIONS_MAX_RETRY_ATTEMPTS = 'max_retry_attempts';
+    public const OPTIONS_RETRY_ONLY_IF_RETRY_AFTER_HEADER = 'retry_only_if_retry_after_header';
+    public const OPTIONS_RETRY_ON_STATUS = 'retry_on_statuses';
+    public const OPTIONS_RETRY_HEADER = 'retry_header';
+    public const OPTIONS_RETRY_ON_TIMEOUT = 'retry_on_timeout';
+    public const OPTIONS_RETRY_AFTER_SECONDS = 'retry_after_seconds';
+    public const OPTIONS_CALLBACK = 'callback';
 
     private $defaultOptions = [
         self::OPTIONS_RETRY_ENABLED => true,
@@ -52,6 +48,7 @@ class RetryMiddleware
 
     /**
      * @param array $options
+     *
      * @return \Closure
      */
     public static function factory(array $options = []): \Closure
@@ -63,6 +60,7 @@ class RetryMiddleware
 
     /**
      * RetryMiddleware constructor.
+     *
      * @param callable $nextHandler
      */
     public function __construct(callable $nextHandler, array $defaultOptions = [])
@@ -73,7 +71,8 @@ class RetryMiddleware
 
     /**
      * @param RequestInterface $request
-     * @param array $options
+     * @param array            $options
+     *
      * @return PromiseInterface
      */
     public function __invoke(RequestInterface $request, array $options): PromiseInterface
@@ -91,10 +90,11 @@ class RetryMiddleware
     }
 
     /**
-     * Retry on configurable response code
+     * Retry on configurable response code.
      *
      * @param RequestInterface $request
-     * @param array $options
+     * @param array            $options
+     *
      * @return \Closure
      */
     private function onFulfilled(RequestInterface $request, array $options): \Closure
@@ -109,10 +109,11 @@ class RetryMiddleware
     }
 
     /**
-     * Retry on connection problems or configurable response code
+     * Retry on connection problems or configurable response code.
      *
      * @param RequestInterface $request
-     * @param array $options
+     * @param array            $options
+     *
      * @return \Closure
      */
     private function onRejected(RequestInterface $request, array $options): \Closure
@@ -135,10 +136,11 @@ class RetryMiddleware
     }
 
     /**
-     * When timeout or connection problem occured
+     * When timeout or connection problem occured.
      *
      * @param ConnectException $exception
-     * @param array $options
+     * @param array            $options
+     *
      * @return bool
      */
     private function shouldRetryOnConnectionException(ConnectException $exception, array $options): bool
@@ -148,12 +150,12 @@ class RetryMiddleware
         }
 
         //max retry
-        if ($this->remainingRetires($options) === 0) {
+        if (0 === $this->remainingRetires($options)) {
             return false;
         }
 
         //timeout
-        if (isset($exception->getHandlerContext()['errno']) && $exception->getHandlerContext()['errno'] === 28) {
+        if (isset($exception->getHandlerContext()['errno']) && 28 === $exception->getHandlerContext()['errno']) {
             return true === $options[self::OPTIONS_RETRY_ON_TIMEOUT];
         }
 
@@ -161,10 +163,11 @@ class RetryMiddleware
     }
 
     /**
-     * Should retry on configured HTTP Response codes
+     * Should retry on configured HTTP Response codes.
      *
      * @param ResponseInterface $response
-     * @param array $options
+     * @param array             $options
+     *
      * @return bool
      */
     private function shouldRetryOnHttpResponse(ResponseInterface $response, array $options): bool
@@ -176,7 +179,7 @@ class RetryMiddleware
         }
 
         // max retry
-        if ($this->remainingRetires($options) === 0) {
+        if (0 === $this->remainingRetires($options)) {
             return false;
         }
 
@@ -188,41 +191,44 @@ class RetryMiddleware
     }
 
     /**
-     * Returns remaining retry attempts
+     * Returns remaining retry attempts.
      *
      * @param array $options
+     *
      * @return int
      */
     private function remainingRetires(array $options): int
     {
-        $count = (int)$options[self::RETRY_COUNT] ?? 0;
-        $max = (int)$options[self::OPTIONS_MAX_RETRY_ATTEMPTS] ?? 0;
+        $count = (int) $options[self::RETRY_COUNT] ?? 0;
+        $max = (int) $options[self::OPTIONS_MAX_RETRY_ATTEMPTS] ?? 0;
 
         return \max($max - $count, 0);
     }
 
     /**
-     * Return seconds to delay
+     * Return seconds to delay.
      *
-     * @param array $options
+     * @param array                  $options
      * @param ResponseInterface|null $response
+     *
      * @return int
      */
     private function delayAfter(array $options, ResponseInterface $response = null): int
     {
         //If Response support Retry-After header
         if ($response && $response->hasHeader(self::RETRY_AFTER)) {
-            return (int)\trim(($response->getHeader(self::RETRY_AFTER)[0]));
+            return (int) \trim(($response->getHeader(self::RETRY_AFTER)[0]));
         }
 
-        return (int)$options[self::OPTIONS_RETRY_AFTER_SECONDS];
+        return (int) $options[self::OPTIONS_RETRY_AFTER_SECONDS];
     }
 
     /**
-     * Return Response or Response with Retry Header depends on option
+     * Return Response or Response with Retry Header depends on option.
      *
      * @param ResponseInterface $response
-     * @param array $options
+     * @param array             $options
+     *
      * @return ResponseInterface
      */
     private function returnResponse(ResponseInterface $response, array $options): ResponseInterface
@@ -235,8 +241,8 @@ class RetryMiddleware
     }
 
     /**
-     * @param RequestInterface $request
-     * @param array $options
+     * @param RequestInterface       $request
+     * @param array                  $options
      * @param ResponseInterface|null $response
      *
      * @return
@@ -247,7 +253,7 @@ class RetryMiddleware
         $delay = $this->delayAfter($options, $response);
 
         if (\is_callable($options[self::OPTIONS_CALLBACK])) {
-            \call_user_func($options[self::OPTIONS_CALLBACK], (float)$delay, $options, $request, $response);
+            \call_user_func($options[self::OPTIONS_CALLBACK], (float) $delay, $options, $request, $response);
         }
 
         usleep($delay * 1000000);
