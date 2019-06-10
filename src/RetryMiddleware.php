@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace MintSoftware\GuzzleRetry;
 
@@ -100,7 +100,7 @@ class RetryMiddleware
     private function onFulfilled(RequestInterface $request, array $options): \Closure
     {
         return function (ResponseInterface $response) use ($request, $options) {
-            if (true === $this->shouldRetryOnHttpResponse($response, $options)) {
+            if (true === $this->shouldRetryOnHttpResponse($options, $response)) {
                 return $this->retry($request, $options, $response);
             }
 
@@ -120,7 +120,7 @@ class RetryMiddleware
     {
         return function ($reason) use ($request, $options) {
             if ($reason instanceof BadResponseException) {
-                if (true === $this->shouldRetryOnHttpResponse($reason->getResponse(), $options)) {
+                if (true === $this->shouldRetryOnHttpResponse($options, $reason->getResponse())) {
                     return $this->retry($request, $options, $reason->getResponse());
                 }
             }
@@ -165,12 +165,12 @@ class RetryMiddleware
     /**
      * Should retry on configured HTTP Response codes.
      *
-     * @param ResponseInterface $response
-     * @param array             $options
+     * @param array                  $options
+     * @param ResponseInterface|null $response
      *
      * @return bool
      */
-    private function shouldRetryOnHttpResponse(ResponseInterface $response, array $options): bool
+    private function shouldRetryOnHttpResponse(array $options, ?ResponseInterface $response): bool
     {
         $statuses = \array_map('\intval', $options[self::OPTIONS_RETRY_ON_STATUS]);
 
@@ -180,6 +180,10 @@ class RetryMiddleware
 
         // max retry
         if (0 === $this->remainingRetires($options)) {
+            return false;
+        }
+
+        if (null === $response) {
             return false;
         }
 
@@ -245,7 +249,7 @@ class RetryMiddleware
      * @param array                  $options
      * @param ResponseInterface|null $response
      *
-     * @return
+     * @return PromiseInterface
      */
     private function retry(RequestInterface $request, array $options, ResponseInterface $response = null): PromiseInterface
     {

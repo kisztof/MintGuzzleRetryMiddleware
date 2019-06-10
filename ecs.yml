@@ -1,0 +1,10 @@
+imports:
+    - { resource: 'vendor/symplify/easy-coding-standard/config/psr12.yml' }
+    
+services:
+    PhpCsFixer\Fixer\Strict\DeclareStrictTypesFixer: ~
+
+parameters:
+    skip:
+        PhpCsFixer\Fixer\PhpTag\BlankLineAfterOpeningTagFixer: ~
+    line_ending: "\n"
