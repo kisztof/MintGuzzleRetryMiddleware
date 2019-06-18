@@ -12,15 +12,18 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
-use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 /**
  * Class RetryMiddlewareTest.
  */
 class RetryMiddlewareTest extends TestCase
 {
-    public function testInstantiation()
+    private const HTTP_OK = 200;
+    private const HTTP_TOO_MANY_REQUESTS = 429;
+    private const HTTP_SERVICE_UNAVAILABLE = 503;
+    private const METHOD_GET = 'GET';
+
+    public function testInstantiation(): void
     {
         $handler = new MockHandler();
         $obj = new RetryMiddleware($handler);
@@ -32,7 +35,7 @@ class RetryMiddlewareTest extends TestCase
      *
      * @param Response $response
      */
-    public function testRetry(Response $response)
+    public function testRetry(Response $response): void
     {
         $stack = HandlerStack::create(
             new MockHandler(
@@ -48,7 +51,7 @@ class RetryMiddlewareTest extends TestCase
         $client = new Client(['handler' => $stack]);
         $response = $client->get('/');
 
-        $this->assertEquals(SymfonyResponse::HTTP_OK, $response->getStatusCode());
+        $this->assertEquals(self::HTTP_OK, $response->getStatusCode());
     }
 
     /**
@@ -57,9 +60,9 @@ class RetryMiddlewareTest extends TestCase
     public function providerForRetryOccursWhenStatusCodeMatches(): array
     {
         return [
-            [new Response(SymfonyResponse::HTTP_TOO_MANY_REQUESTS, []), true],
-            [new Response(SymfonyResponse::HTTP_SERVICE_UNAVAILABLE, []), true],
-            [new Response(SymfonyResponse::HTTP_OK, [], 'OK'), false],
+            [new Response(self::HTTP_TOO_MANY_REQUESTS, []), true],
+            [new Response(self::HTTP_SERVICE_UNAVAILABLE, []), true],
+            [new Response(self::HTTP_OK, [], 'OK'), false],
         ];
     }
 
@@ -68,7 +71,7 @@ class RetryMiddlewareTest extends TestCase
      *
      * @param array $responses
      */
-    public function testRetriesFailAfterSpecifiedAttempts(array $responses)
+    public function testRetriesFailAfterSpecifiedAttempts(array $responses): void
     {
         $stack = HandlerStack::create(new MockHandler($responses));
         $count = 0;
@@ -96,10 +99,10 @@ class RetryMiddlewareTest extends TestCase
      */
     public function retriesFailAfterSpecifiedAttemptsProvider(): array
     {
-        $response = new Response(SymfonyResponse::HTTP_TOO_MANY_REQUESTS);
+        $response = new Response(self::HTTP_TOO_MANY_REQUESTS);
         $connectException = new ConnectException(
             'Connect Timeout',
-            new Request(SymfonyRequest::METHOD_GET, '/'),
+            new Request(self::METHOD_GET, '/'),
             null,
             ['errno' => 28]
         );
@@ -114,8 +117,9 @@ class RetryMiddlewareTest extends TestCase
      * @dataProvider retriesPassAfterSpecifiedAttemptsProvider
      *
      * @param array $responses
+     * @param int   $retryAssert
      */
-    public function testRetriesPassAfterSpecifiedAttempts(array $responses, int $retryAssert)
+    public function testRetriesPassAfterSpecifiedAttempts(array $responses, int $retryAssert): void
     {
         $stack = HandlerStack::create(new MockHandler($responses));
         $count = 0;
@@ -131,9 +135,9 @@ class RetryMiddlewareTest extends TestCase
         $stack->push($retry);
         $client = new Client(['handler' => $stack]);
 
-        $response = $client->request(SymfonyRequest::METHOD_GET, '/');
+        $response = $client->request(self::METHOD_GET, '/');
         $this->assertEquals($retryAssert, $count);
-        $this->assertEquals(SymfonyResponse::HTTP_OK, $response->getStatusCode());
+        $this->assertEquals(self::HTTP_OK, $response->getStatusCode());
     }
 
     /**
@@ -141,10 +145,10 @@ class RetryMiddlewareTest extends TestCase
      */
     public function retriesPassAfterSpecifiedAttemptsProvider(): array
     {
-        $response = new Response(SymfonyResponse::HTTP_TOO_MANY_REQUESTS);
+        $response = new Response(self::HTTP_TOO_MANY_REQUESTS);
         $connectException = new ConnectException(
             '',
-            new Request(SymfonyRequest::METHOD_GET, '/'),
+            new Request(self::METHOD_GET, '/'),
             null,
             ['errno' => 28]
         );
@@ -155,12 +159,12 @@ class RetryMiddlewareTest extends TestCase
         ];
     }
 
-    public function testRetryAfterHeader()
+    public function testRetryAfterHeader(): void
     {
         $retryAfter = 2;
         $responses = [
-            new Response(SymfonyResponse::HTTP_TOO_MANY_REQUESTS, ['Retry-After' => $retryAfter]),
-            new Response(SymfonyResponse::HTTP_OK, []),
+            new Response(self::HTTP_TOO_MANY_REQUESTS, ['Retry-After' => $retryAfter]),
+            new Response(self::HTTP_OK, []),
         ];
 
         $stack = HandlerStack::create(new MockHandler($responses));
@@ -185,7 +189,7 @@ class RetryMiddlewareTest extends TestCase
      *
      * @param array $responses
      */
-    public function testRetryDisabled(array $responses)
+    public function testRetryDisabled(array $responses): void
     {
         $stack = HandlerStack::create(new MockHandler($responses));
         $stack->push(
@@ -199,27 +203,30 @@ class RetryMiddlewareTest extends TestCase
         $client = new Client(['handler' => $stack]);
 
         $this->expectException(GuzzleException::class);
-        $client->request(SymfonyRequest::METHOD_GET, '/');
+        $client->request(self::METHOD_GET, '/');
     }
 
-    public function retryDisabledProvider()
+    /**
+     * @return array
+     */
+    public function retryDisabledProvider(): array
     {
         return [
             [
                 [
-                    new Response(SymfonyResponse::HTTP_TOO_MANY_REQUESTS, []),
-                    new Response(SymfonyResponse::HTTP_OK, []),
+                    new Response(self::HTTP_TOO_MANY_REQUESTS, []),
+                    new Response(self::HTTP_OK, []),
                 ],
             ],
             [
                 [
                     new ConnectException(
                         '',
-                        new Request(SymfonyRequest::METHOD_GET, '/'),
+                        new Request(self::METHOD_GET, '/'),
                         null,
                         ['errno' => 28]
                     ),
-                    new Response(SymfonyResponse::HTTP_OK, []),
+                    new Response(self::HTTP_OK, []),
                 ],
             ],
         ];
@@ -228,11 +235,11 @@ class RetryMiddlewareTest extends TestCase
     /**
      * Test Retry After Seconds option.
      */
-    public function testRetryAfterSeconds()
+    public function testRetryAfterSeconds(): void
     {
         $responses = [
-            new Response(SymfonyResponse::HTTP_TOO_MANY_REQUESTS, []),
-            new Response(SymfonyResponse::HTTP_OK, []),
+            new Response(self::HTTP_TOO_MANY_REQUESTS, []),
+            new Response(self::HTTP_OK, []),
         ];
 
         $stack = HandlerStack::create(new MockHandler($responses));
@@ -250,7 +257,7 @@ class RetryMiddlewareTest extends TestCase
 
         $client = new Client(['handler' => $stack]);
 
-        $client->request(SymfonyRequest::METHOD_GET, '/');
+        $client->request(self::METHOD_GET, '/');
         $this->assertEquals(2, $delayed);
     }
 
@@ -259,7 +266,7 @@ class RetryMiddlewareTest extends TestCase
      *
      * @param array $responses
      */
-    public function testForcedRetryAfterOption(array $responses)
+    public function testForcedRetryAfterOption(array $responses): void
     {
         $stack = HandlerStack::create(new MockHandler($responses));
         $stack->push(
@@ -273,72 +280,75 @@ class RetryMiddlewareTest extends TestCase
         $client = new Client(['handler' => $stack]);
 
         $this->expectException(GuzzleException::class);
-        $client->request(SymfonyRequest::METHOD_GET, '/');
+        $client->request(self::METHOD_GET, '/');
     }
 
-    public function forcedRetryAfterOption()
+    /**
+     * @return array
+     */
+    public function forcedRetryAfterOption(): array
     {
         return [
             [
                 [
-                    new Response(SymfonyResponse::HTTP_TOO_MANY_REQUESTS, []),
-                    new Response(SymfonyResponse::HTTP_OK, []),
+                    new Response(self::HTTP_TOO_MANY_REQUESTS, []),
+                    new Response(self::HTTP_OK, []),
                 ],
             ],
             [
                 [
                     new ConnectException(
                         '',
-                        new Request(SymfonyRequest::METHOD_GET, '/'),
+                        new Request(self::METHOD_GET, '/'),
                         null,
                         ['errno' => 28]
                     ),
-                    new Response(SymfonyResponse::HTTP_OK, []),
+                    new Response(self::HTTP_OK, []),
                 ],
             ],
             [
                 [
                     new ConnectException(
                         '',
-                        new Request(SymfonyRequest::METHOD_GET, '/'),
+                        new Request(self::METHOD_GET, '/'),
                         null,
                         ['errno' => 28]
                     ),
-                    new Response(SymfonyResponse::HTTP_OK, []),
+                    new Response(self::HTTP_OK, []),
                 ],
             ],
             [
                 [
                     new BadResponseException(
                         '',
-                        new Request(SymfonyRequest::METHOD_GET, '/'),
-                        new Response(SymfonyResponse::HTTP_TOO_MANY_REQUESTS, [])
+                        new Request(self::METHOD_GET, '/'),
+                        new Response(self::HTTP_TOO_MANY_REQUESTS, [])
                     ),
-                    new Response(SymfonyResponse::HTTP_OK, []),
+                    new Response(self::HTTP_OK, []),
                 ],
             ],
             [
                 [
                     new BadResponseException(
                         '',
-                        new Request(SymfonyRequest::METHOD_GET, '/'),
+                        new Request(self::METHOD_GET, '/'),
                         null
                     ),
-                    new Response(SymfonyResponse::HTTP_OK, []),
+                    new Response(self::HTTP_OK, []),
                 ],
             ],
         ];
     }
 
-    public function testAddRetryHeader()
+    public function testAddRetryHeader(): void
     {
         $responses = [
             new BadResponseException(
                 '',
-                new Request(SymfonyRequest::METHOD_GET, '/'),
-                new Response(SymfonyResponse::HTTP_TOO_MANY_REQUESTS, [])
+                new Request(self::METHOD_GET, '/'),
+                new Response(self::HTTP_TOO_MANY_REQUESTS, [])
             ),
-            new Response(SymfonyResponse::HTTP_OK, []),
+            new Response(self::HTTP_OK, []),
         ];
         $stack = HandlerStack::create(new MockHandler($responses));
         $stack->push(
@@ -351,26 +361,26 @@ class RetryMiddlewareTest extends TestCase
 
         $client = new Client(['handler' => $stack]);
 
-        $response = $client->request(SymfonyRequest::METHOD_GET, '/');
+        $response = $client->request(self::METHOD_GET, '/');
         $this->assertArrayHasKey(RetryMiddleware::RETRY_HEADER, $response->getHeaders());
     }
 
-    public function testShouldNotRetryWhileConnectionErrorNot()
+    public function testShouldNotRetryWhileConnectionErrorNot(): void
     {
         $responses = [
             new ConnectException(
                 '',
-                new Request(SymfonyRequest::METHOD_GET, '/'),
+                new Request(self::METHOD_GET, '/'),
                 null,
                 ['errno' => 1]
             ),
-            new Response(SymfonyResponse::HTTP_OK, []),
+            new Response(self::HTTP_OK, []),
         ];
         $stack = HandlerStack::create(new MockHandler($responses));
         $stack->push(RetryMiddleware::factory());
         $client = new Client(['handler' => $stack]);
 
         $this->expectException(GuzzleException::class);
-        $client->request(SymfonyRequest::METHOD_GET, '/');
+        $client->request(self::METHOD_GET, '/');
     }
 }

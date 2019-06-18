@@ -7,7 +7,6 @@ use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Promise\PromiseInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Symfony\Component\HttpFoundation\Response;
 use function GuzzleHttp\Promise\rejection_for;
 
 /**
@@ -15,9 +14,6 @@ use function GuzzleHttp\Promise\rejection_for;
  */
 class RetryMiddleware
 {
-    private const RETRY_AFTER = 'Retry-After';
-    private const RETRY_COUNT = 'retry_count';
-
     public const RETRY_HEADER = 'X-Retry-Counter';
     public const OPTIONS_RETRY_ENABLED = 'retry_enabled';
     public const OPTIONS_MAX_RETRY_ATTEMPTS = 'max_retry_attempts';
@@ -28,14 +24,19 @@ class RetryMiddleware
     public const OPTIONS_RETRY_AFTER_SECONDS = 'retry_after_seconds';
     public const OPTIONS_CALLBACK = 'callback';
 
+    private const RETRY_AFTER = 'Retry-After';
+    private const RETRY_COUNT = 'retry_count';
+    private const HTTP_TOO_MANY_REQUESTS = 429;
+    private const HTTP_SERVICE_UNAVAILABLE = 503;
+
     private $defaultOptions = [
         self::OPTIONS_RETRY_ENABLED => true,
         self::OPTIONS_MAX_RETRY_ATTEMPTS => 10,
         self::OPTIONS_RETRY_AFTER_SECONDS => 1,
         self::OPTIONS_RETRY_ONLY_IF_RETRY_AFTER_HEADER => false,
         self::OPTIONS_RETRY_ON_STATUS => [
-            Response::HTTP_TOO_MANY_REQUESTS,
-            Response::HTTP_SERVICE_UNAVAILABLE,
+            self::HTTP_TOO_MANY_REQUESTS,
+            self::HTTP_SERVICE_UNAVAILABLE,
         ],
         self::OPTIONS_RETRY_ON_TIMEOUT => false,
         self::OPTIONS_CALLBACK => null,
@@ -62,6 +63,7 @@ class RetryMiddleware
      * RetryMiddleware constructor.
      *
      * @param callable $nextHandler
+     * @param array    $defaultOptions
      */
     public function __construct(callable $nextHandler, array $defaultOptions = [])
     {
@@ -136,7 +138,7 @@ class RetryMiddleware
     }
 
     /**
-     * When timeout or connection problem occured.
+     * When timeout or connection problem occurred.
      *
      * @param ConnectException $exception
      * @param array            $options
@@ -187,7 +189,7 @@ class RetryMiddleware
             return false;
         }
 
-        if (!$response->hasHeader(self::RETRY_AFTER) && $options[self::OPTIONS_RETRY_ONLY_IF_RETRY_AFTER_HEADER]) {
+        if ($options[self::OPTIONS_RETRY_ONLY_IF_RETRY_AFTER_HEADER] && !$response->hasHeader(self::RETRY_AFTER)) {
             return false;
         }
 
@@ -217,11 +219,11 @@ class RetryMiddleware
      *
      * @return int
      */
-    private function delayAfter(array $options, ResponseInterface $response = null): int
+    private function delayAfter(array $options, ?ResponseInterface $response = null): int
     {
         //If Response support Retry-After header
         if ($response && $response->hasHeader(self::RETRY_AFTER)) {
-            return (int) \trim(($response->getHeader(self::RETRY_AFTER)[0]));
+            return (int) \trim($response->getHeader(self::RETRY_AFTER)[0]);
         }
 
         return (int) $options[self::OPTIONS_RETRY_AFTER_SECONDS];
@@ -253,14 +255,14 @@ class RetryMiddleware
      */
     private function retry(RequestInterface $request, array $options, ResponseInterface $response = null): PromiseInterface
     {
-        $options[self::RETRY_COUNT] = $options[self::RETRY_COUNT] + 1;
+        $options[self::RETRY_COUNT] += 1;
         $delay = $this->delayAfter($options, $response);
 
         if (\is_callable($options[self::OPTIONS_CALLBACK])) {
             \call_user_func($options[self::OPTIONS_CALLBACK], (float) $delay, $options, $request, $response);
         }
 
-        usleep($delay * 1000000);
+        \sleep($delay);
 
         return $this($request, $options);
     }
