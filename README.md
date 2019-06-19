@@ -24,15 +24,15 @@ composer require mintsoftware/guzzle_retry_middleware
 
 ### Configurable options
 
-| Option                                                                                | Type              | Default  | 
-| ------------------------------------------------------------------------------------- | ----------------- | -------- | 
-| `\MintSoftware\GuzzleRetry\RetryMiddleware::OPTIONS_RETRY_ENABLED`                    | boolean           | true     | 
+| Option                                                                                | Type              | Default  |
+| ------------------------------------------------------------------------------------- | ----------------- | -------- |
+| `\MintSoftware\GuzzleRetry\RetryMiddleware::OPTIONS_RETRY_ENABLED`                    | boolean           | true     |
 | `\MintSoftware\GuzzleRetry\RetryMiddleware::OPTIONS_MAX_RETRY_ATTEMPTS`               | integer           | 10       |
-| `\MintSoftware\GuzzleRetry\RetryMiddleware::OPTIONS_RETRY_AFTER_SECONDS`              | integer           | 1        | 
-| `\MintSoftware\GuzzleRetry\RetryMiddleware::OPTIONS_RETRY_ONLY_IF_RETRY_AFTER_HEADER` | boolean           | false    | 
-| `\MintSoftware\GuzzleRetry\RetryMiddleware::OPTIONS_RETRY_ON_STATUS`                  | array<int>        | 503, 429 | 
-| `\MintSoftware\GuzzleRetry\RetryMiddleware::OPTIONS_CALLBACK`                         | callable          | null     | 
-| `\MintSoftware\GuzzleRetry\RetryMiddleware::OPTIONS_RETRY_ON_TIMEOUT`                 | boolean           | false    | 
+| `\MintSoftware\GuzzleRetry\RetryMiddleware::OPTIONS_RETRY_AFTER_SECONDS`              | integer           | 1        |
+| `\MintSoftware\GuzzleRetry\RetryMiddleware::OPTIONS_RETRY_ONLY_IF_RETRY_AFTER_HEADER` | boolean           | false    |
+| `\MintSoftware\GuzzleRetry\RetryMiddleware::OPTIONS_RETRY_ON_STATUS`                  | array<int>        | 503, 429 |
+| `\MintSoftware\GuzzleRetry\RetryMiddleware::OPTIONS_CALLBACK`                         | callable          | null     |
+| `\MintSoftware\GuzzleRetry\RetryMiddleware::OPTIONS_RETRY_ON_TIMEOUT`                 | boolean           | false    |
 | `\MintSoftware\GuzzleRetry\RetryMiddleware::OPTIONS_RETRY_HEADER`                     | boolean           | false    |
 
 ## Tests
@@ -43,4 +43,28 @@ composer test
 
 ## Contirubtion
 
-Feel free to contribute
+Feel free to contribute.
+
+## Static Analysis
+
+### Code Sniffer
+We are using [Easy Coding Standard](https://github.com/Symplify/EasyCodingStandard).
+```bash
+composer style-check
+```
+To fix errors which can be fixed automatic use:
+```bash
+composer style-fix
+```
+
+### PHP Stan
+For finding errors we are using [PHPStan](https://github.com/phpstan/phpstan).
+Simply run:
+```
+composer phpstan
+```
+
+## Build
+```bash
+composer build
+```

@@ -38,7 +38,12 @@
     "test": "vendor/bin/phpunit --coverage-text",
     "style-check": "vendor/bin/ecs check src tests --config ecs.yml",
     "style-fix": "vendor/bin/ecs check src tests --config ecs.yml --fix",
-    "phpstan": "vendor/bin/phpstan analyse src tests --level max"
+    "phpstan": "vendor/bin/phpstan analyse src tests --level max",
+    "build":[
+      "style-check",
+      "phpstan",
+      "test"
+    ]
   },
   "extra": {
     "branch-alias": {
