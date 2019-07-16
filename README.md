@@ -1,4 +1,5 @@
 # Mint Retry Middleware
+[![Build Status](https://img.shields.io/travis/MintSoftware/MintGuzzleRetryMiddleware/master.svg?style=flat-square)](https://travis-ci.org/MintSoftware/MintGuzzleRetryMiddleware)
 
 This is a [Guzzle v6](http://guzzlephp.org) middleware, which retry requests with response status codes `503` or `429` by default, also can retry timeout requests.
 Both options are configurable. When response provide a `Retry-After` header, this middleware has option to delay requests by provided time amount.

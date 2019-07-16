@@ -15,5 +15,6 @@ before_script:
     - travis_retry composer update --no-interaction --prefer-dist
 
 script:
-    - composer phpcs
+    - composer style-check
+    - composer phpstan
     - composer test
