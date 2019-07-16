@@ -34,7 +34,7 @@ composer require mintsoftware/guzzle_retry_middleware
 | `\MintSoftware\GuzzleRetry\RetryMiddleware::OPTIONS_RETRY_ON_STATUS`                  | array<int>        | 503, 429 |
 | `\MintSoftware\GuzzleRetry\RetryMiddleware::OPTIONS_CALLBACK`                         | callable          | null     |
 | `\MintSoftware\GuzzleRetry\RetryMiddleware::OPTIONS_RETRY_ON_TIMEOUT`                 | boolean           | false    |
-| `\MintSoftware\GuzzleRetry\RetryMiddleware::OPTIONS_RETRY_HEADER`                     | boolean           | false    |
+| `\MintSoftware\GuzzleRetry\RetryMiddleware::OPTIONS_RETRY_HEADER`                     | string            | null     |
 
 ## Tests
 

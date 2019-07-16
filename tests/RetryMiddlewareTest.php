@@ -60,9 +60,9 @@ class RetryMiddlewareTest extends TestCase
     public function providerForRetryOccursWhenStatusCodeMatches(): array
     {
         return [
-            [new Response(self::HTTP_TOO_MANY_REQUESTS, []), true],
-            [new Response(self::HTTP_SERVICE_UNAVAILABLE, []), true],
-            [new Response(self::HTTP_OK, [], 'OK'), false],
+            [new Response(self::HTTP_TOO_MANY_REQUESTS, [])],
+            [new Response(self::HTTP_SERVICE_UNAVAILABLE, [])],
+            [new Response(self::HTTP_OK, [], 'OK')],
         ];
     }
 

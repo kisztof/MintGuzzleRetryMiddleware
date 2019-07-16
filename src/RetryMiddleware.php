@@ -40,7 +40,6 @@ class RetryMiddleware
         ],
         self::OPTIONS_RETRY_ON_TIMEOUT => false,
         self::OPTIONS_CALLBACK => null,
-        self::OPTIONS_RETRY_HEADER => false,
     ];
     /**
      * @var callable
